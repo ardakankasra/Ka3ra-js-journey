@@ -33,3 +33,20 @@
   - 4 binding rules (priority order): `new` > explicit (`call/apply/bind`) > implicit (`obj.method()`) > default (`undefined` in strict, `globalThis` otherwise).
   - Arrow functions have no own `this` — they inherit it lexically from the outer scope.
   - Classic bug: passing a method as a callback loses `this` (e.g. `app.get('/x', service.handle)` → fix with `.bind()` or a wrapper arrow).
+
+### Execution Context:
+  - The box JS builds before running code: holds variables, scope link, and `this`.
+  - Two phases: **creation** (reserve `var`/functions = hoisting, lock `let/const` = TDZ, set `this`, link outer scope) then **execution** (run line by line).
+  - Three parts: Variable Environment (own vars), Lexical Environment (link to outer scope → scope chain / closure), `this` binding.
+  - One Global (GEC) + one Function context (FEC) per call, stacked on the **call stack**; popped on `return` unless a closure keeps it alive.
+
+  ```javascript
+  function outer() {
+    const a = 1;        // lives in outer's FEC
+    function inner() {
+      console.log(a);   // not here → follows lexical link to outer
+    }
+    inner();            // new FEC pushed on stack
+  }
+  outer();              // stack: GEC → outer → inner
+  ```
