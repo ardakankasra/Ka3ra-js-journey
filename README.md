@@ -9,7 +9,7 @@
 | Day | Topic | Status | Notes |
 |----|-------|:------:|-------|
 | 01 | Values, Types, Coercion + Scope, Hoisting, TDZ, Closures | ✅ | |
-| 02 | `this`, Execution Context, call/apply/bind + Prototypes, Classes, Mixins | 🟡 | |
+| 02 | `this`, Execution Context, call/apply/bind + Prototypes, Classes, Mixins | ✅ | |
 | 03 | Objects & Arrays deep-dive + Iterators & Generators | ⬜ | |
 | 04 | Event Loop (Node phases) + Promises/async-await + Error Handling | ⬜ | ⚠️ heavy day |
 | 05 | Modules (CJS vs ESM) + Meta-programming (Symbol/Proxy/Reflect) | ⬜ | |
