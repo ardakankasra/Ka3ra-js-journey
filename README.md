@@ -139,8 +139,3 @@ Days marked ⚠️ combine several dense subtopics — split into 1.5 days if ne
 - denysdovhan/wtfjs — edge cases and quirky behavior, good for stress-testing understanding
 
 ---
-
-## 🔗 Related
-
-- Main project: `food-warehouse-backend` (Node.js, Express 5, PostgreSQL)
-- Profile README: link back here as the "currently deep-diving into" pinned repo

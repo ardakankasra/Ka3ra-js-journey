@@ -50,3 +50,18 @@
   }
   outer();              // stack: GEC → outer → inner
   ```
+
+### Prototype Chain:
+  - Lookup rule: if a prop isn't on the object itself, JS follows `[[Prototype]]` up to `null`.
+  - Solves sharing: one method on the parent, used by all children — no per-object copies.
+  - Found methods run with `this` = the caller, not where they were defined.
+  - `class` is sugar over `Constructor.prototype`; `map`/`toUpperCase`/`toString` are all prototype lookups.
+
+  ```javascript
+  const animal = { speak() { console.log(this.name + ' makes sound'); } };
+  const dog = { name: 'Rex' };
+
+  Object.setPrototypeOf(dog, animal);
+  dog.speak(); // Rex makes sound — found on parent, this === dog
+  ```
+  - Own props shadow prototype props; never mutate `Object.prototype` (global pollution).
