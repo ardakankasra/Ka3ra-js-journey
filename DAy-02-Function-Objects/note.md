@@ -84,3 +84,29 @@
   const a = new Admin('Ali', 1);
   a.greet(); // hi Ali — found on User.prototype, this === a
   ```
+
+### Mixin:
+  - Problem: one class needs skills from MANY sources, but `extends` takes only ONE parent.
+  - Fix: write each skill as a plain object, then copy-paste them onto the prototype.
+  - Think: `extends` = "IS a" (Admin IS a User). Mixin = "CAN do" (Service CAN log, CAN validate).
+
+  ```javascript
+  const CanLog = {
+    log(msg) { console.log(`[${this.name}] ${msg}`); }
+  };
+  const CanValidate = {
+    validate() { return !!this.name; }
+  };
+
+  class Service {}
+  // copy both skill-packs onto the shared prototype:
+  Object.assign(Service.prototype, CanLog, CanValidate);
+
+  const s = new Service();
+  s.name = 'orders';
+  s.log('started'); // [orders] started — copied from CanLog, this === s
+  s.validate();     // true — copied from CanValidate
+  ```
+  - No chain: methods are flat COPIES on `Service.prototype` (no `super`).
+  - Watch out: if two mixins define the same name, the LAST one in `Object.assign` silently wins.
+  - Watch out: never put changeable state on the mixin — all instances would share one copy.
