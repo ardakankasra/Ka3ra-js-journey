@@ -65,3 +65,22 @@
   dog.speak(); // Rex makes sound — found on parent, this === dog
   ```
   - Own props shadow prototype props; never mutate `Object.prototype` (global pollution).
+
+### Class:
+  - Sugar over `function + prototype` — no new inheritance engine.
+  - Methods live on `Class.prototype`, shared via the chain; `typeof Class === 'function'`.
+  - Adds `extends`/`super`, `#private` fields, `static` members.
+  - Two behavior diffs: must use `new`, and not hoisted (like `let`).
+  - Same `this` pitfall: passing a method as callback loses `this` → `.bind()` or arrow wrapper; arrow class fields lock `this` but cost one copy per instance.
+
+  ```javascript
+  class User {
+    constructor(name) { this.name = name; }
+    greet() { console.log('hi ' + this.name); }
+  }
+  class Admin extends User {
+    constructor(name, level) { super(name); this.level = level; }
+  }
+  const a = new Admin('Ali', 1);
+  a.greet(); // hi Ali — found on User.prototype, this === a
+  ```
