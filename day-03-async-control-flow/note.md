@@ -44,6 +44,17 @@
 - **Rules:** `seal` = all `configurable: false`; `freeze` = `seal` + all `writable: false`. Both are **shallow** — nested objects stay open. In sloppy mode failures are silent, in `"use strict"` they throw `TypeError`.
 - **Classic bug:** `freeze` looks fully safe, but `cfg.db.host = "hacked"` still works — only the first level is frozen.
 
+### Shallow vs Deep Clone:
+
+- **What it is:** shallow copies one level (nested stays shared); deep copies nested structures too (fully separate).
+  ```javascript
+  const copy = { ...order }; // shallow — copy.customer === order.customer
+  const deep = structuredClone(order); // deep — fully separate
+  ```
+- **Rules:** spread / `Object.assign` / `slice` are **shallow**. `structuredClone` is the standard **deep** (fails on functions, DOM). `JSON.parse(JSON.stringify())` is deep-but-lossy: drops `undefined`/functions, turns `Date` into string, breaks on circular refs.
+- **Classic bug:** copy an order with spread, edit the nested field, and the original silently changes — shared reference, not logic bug.
+
 ### Exercises:
 - Open `01-property-descriptor.js`, predict each `console.log` first (where `// ?` is), then run `node 01-property-descriptor.js` and compare with your guess.
 - Open `02-freeze-seal.js`, predict each `console.log` first (where `// ?` is), then run `node 02-freeze-seal.js` and compare with your guess.
+- Open `03-shallow-deep-clone.js`, predict each `console.log` first (where `// ?` is), then run `node 03-shallow-deep-clone.js` and compare with your guess.
