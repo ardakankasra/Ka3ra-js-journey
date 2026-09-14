@@ -54,7 +54,18 @@
 - **Rules:** spread / `Object.assign` / `slice` are **shallow**. `structuredClone` is the standard **deep** (fails on functions, DOM). `JSON.parse(JSON.stringify())` is deep-but-lossy: drops `undefined`/functions, turns `Date` into string, breaks on circular refs.
 - **Classic bug:** copy an order with spread, edit the nested field, and the original silently changes — shared reference, not logic bug.
 
+### Array by-copy methods:
+
+- **What it is:** `toSorted` / `toReversed` / `toSpliced` / `with` do the same as the old methods but return a new array instead of mutating.
+  ```javascript
+  const r = [30, 10, 20].toSorted(); // [10, 20, 30], original untouched
+  const w = ["a", "b"].with(1, "B"); // ["a", "B"], no mutation
+  ```
+- **Rules:** pairs: `sort→toSorted`, `reverse→toReversed`, `splice→toSpliced` (same args), `arr[i] = v→with(i, v)`. Result must be captured — calling alone changes nothing. Still **shallow**: nested objects stay shared. `with` on bad index throws `RangeError`.
+- **Classic bug:** calling `toSorted` without using its return value and wondering why nothing changed — unlike `sort`, the original never moves.
+
 ### Exercises:
 - Open `01-property-descriptor.js`, predict each `console.log` first (where `// ?` is), then run `node 01-property-descriptor.js` and compare with your guess.
 - Open `02-freeze-seal.js`, predict each `console.log` first (where `// ?` is), then run `node 02-freeze-seal.js` and compare with your guess.
 - Open `03-shallow-deep-clone.js`, predict each `console.log` first (where `// ?` is), then run `node 03-shallow-deep-clone.js` and compare with your guess.
+- Open `04-array-by-copy.js`, predict each `console.log` first (where `// ?` is), then run `node 04-array-by-copy.js` and compare with your guess.
