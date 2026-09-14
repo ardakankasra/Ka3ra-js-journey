@@ -30,5 +30,20 @@
 - **Rules:** created with `=` means all three are `true`; created with `defineProperty` means anything unstated is `false`. Spread, `Object.assign`, and `Object.keys` only see **own + enumerable** properties. `configurable: false` cannot be undone.
 - **Classic bug:** a field goes missing after a spread copy — cause: that field is `enumerable: false`, not a bug in your code.
 
+### Freeze / Seal:
+
+- **What it is:** `seal` locks the shape (no add, no delete); `freeze` locks the shape + the values (no add, no delete, no edit).
+  ```javascript
+  const s = Object.seal({ age: 22 });
+  s.age = 50; // OK
+  s.job = "dev"; // blocked — shape is locked
+
+  const f = Object.freeze({ port: 4000 });
+  f.port = 9999; // blocked — value is locked too
+  ```
+- **Rules:** `seal` = all `configurable: false`; `freeze` = `seal` + all `writable: false`. Both are **shallow** — nested objects stay open. In sloppy mode failures are silent, in `"use strict"` they throw `TypeError`.
+- **Classic bug:** `freeze` looks fully safe, but `cfg.db.host = "hacked"` still works — only the first level is frozen.
+
 ### Exercises:
 - Open `01-property-descriptor.js`, predict each `console.log` first (where `// ?` is), then run `node 01-property-descriptor.js` and compare with your guess.
+- Open `02-freeze-seal.js`, predict each `console.log` first (where `// ?` is), then run `node 02-freeze-seal.js` and compare with your guess.
