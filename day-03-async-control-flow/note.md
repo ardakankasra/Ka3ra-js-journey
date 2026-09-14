@@ -74,9 +74,20 @@
 - **Rules:** `Symbol.iterator()` must return an iterator (`next()` → `{ value, done }`). Arrays, strings, `Map/Set` are iterable; plain objects are **not** (`for...of` throws — use `Object.keys/entries` or `for...in`). Generator (`function*` + `yield`) is the shortcut for building one.
 - **Classic bug:** `for...of` on a plain object → `TypeError: not iterable` — `for...of` wants values from an iterator, `for...in` wants keys.
 
+### Generator:
+
+- **What it is:** a function (`function*`) that pauses at each `yield` and resumes on `next()` — state kept by itself, lazy by default.
+  ```javascript
+  function* gen() { yield 10; yield 20; }
+  [...gen()]; // [10, 20]
+  ```
+- **Rules:** each `next()` runs to the next `yield` and returns `{ value, done }`. `next(x)` injects `x` as the paused `yield`'s value (first `next` arg ignored). `yield*` delegates to another generator. `return()` closes it; exhausted generators stay `done: true` — make a new one. Infinite `while(true) yield` is fine — consume only what you need.
+- **Classic bug:** forgetting `()` (nothing runs until `gen()` + `next()`), reusing an exhausted generator, or expecting `return`'s value in `for...of`/spread — it only shows in the final `next()`.
+
 ### Exercises:
 - Open `01-property-descriptor.js`, predict each `console.log` first (where `// ?` is), then run `node 01-property-descriptor.js` and compare with your guess.
 - Open `02-freeze-seal.js`, predict each `console.log` first (where `// ?` is), then run `node 02-freeze-seal.js` and compare with your guess.
 - Open `03-shallow-deep-clone.js`, predict each `console.log` first (where `// ?` is), then run `node 03-shallow-deep-clone.js` and compare with your guess.
 - Open `04-array-by-copy.js`, predict each `console.log` first (where `// ?` is), then run `node 04-array-by-copy.js` and compare with your guess.
 - Open `05-iterator.js`, predict each `console.log` first (where `// ?` is), then run `node 05-iterator.js` and compare with your guess.
+- Open `06-generator.js`, predict each `console.log` first (where `// ?` is), then run `node 06-generator.js` and compare with your guess.
