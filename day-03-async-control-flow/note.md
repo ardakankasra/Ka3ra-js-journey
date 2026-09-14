@@ -64,8 +64,19 @@
 - **Rules:** pairs: `sort→toSorted`, `reverse→toReversed`, `splice→toSpliced` (same args), `arr[i] = v→with(i, v)`. Result must be captured — calling alone changes nothing. Still **shallow**: nested objects stay shared. `with` on bad index throws `RangeError`.
 - **Classic bug:** calling `toSorted` without using its return value and wondering why nothing changed — unlike `sort`, the original never moves.
 
+### Iterator:
+
+- **What it is:** any object with a `Symbol.iterator` method is iterable and works with `for...of`, spread, and destructuring.
+  ```javascript
+  const range = { *[Symbol.iterator]() { yield 1; yield 2; } };
+  for (const n of range) console.log(n); // 1, 2
+  ```
+- **Rules:** `Symbol.iterator()` must return an iterator (`next()` → `{ value, done }`). Arrays, strings, `Map/Set` are iterable; plain objects are **not** (`for...of` throws — use `Object.keys/entries` or `for...in`). Generator (`function*` + `yield`) is the shortcut for building one.
+- **Classic bug:** `for...of` on a plain object → `TypeError: not iterable` — `for...of` wants values from an iterator, `for...in` wants keys.
+
 ### Exercises:
 - Open `01-property-descriptor.js`, predict each `console.log` first (where `// ?` is), then run `node 01-property-descriptor.js` and compare with your guess.
 - Open `02-freeze-seal.js`, predict each `console.log` first (where `// ?` is), then run `node 02-freeze-seal.js` and compare with your guess.
 - Open `03-shallow-deep-clone.js`, predict each `console.log` first (where `// ?` is), then run `node 03-shallow-deep-clone.js` and compare with your guess.
 - Open `04-array-by-copy.js`, predict each `console.log` first (where `// ?` is), then run `node 04-array-by-copy.js` and compare with your guess.
+- Open `05-iterator.js`, predict each `console.log` first (where `// ?` is), then run `node 05-iterator.js` and compare with your guess.
