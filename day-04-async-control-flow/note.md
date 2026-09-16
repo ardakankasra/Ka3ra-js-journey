@@ -24,5 +24,21 @@
 - **Rules:** no callback ever interrupts running sync code. Microtasks (`process.nextTick` first in Node, then promises/`queueMicrotask`) drain fully before any macrotask. `setTimeout(fn, 0)` vs `setImmediate(fn)` from the main module is nondeterministic — inside an I/O callback `setImmediate` always wins.
 - **Classic bug:** blocking the loop with sync CPU work (big `JSON.parse`, unchunked million-row loop, `crypto` sync call in a handler) stalls ALL requests, not just that one — offload to a worker, chunk with `setImmediate`, or stream.
 
+### Microtask vs Macrotask:
+
+- **What it is:** two queues, different priority — the microtask queue (`Promise.then`, `await` continuations, `queueMicrotask`) always drains fully before the macrotask queue (`setTimeout`, I/O, `setImmediate`) runs once.
+
+  ```javascript
+  setTimeout(() => console.log("timeout"), 0); // macrotask — last
+  Promise.resolve().then(() => console.log("promise")); // microtask — first
+  ```
+
+- **What problem it solves:** ordering guarantees — microtask means "right after this script, before anything timed"; macrotask means "yield to timers/I/O first". Use a microtask when the follow-up must beat any timer (e.g. update cache before a delayed save); use a timeout when you want to yield a full loop turn.
+
+- **Where it is used:** code after `await` in an Express handler is a microtask (other pending microtasks run first); `setTimeout`-based retry/backoff always waits a full microtask drain plus its delay.
+- **Rules:** one macrotask per loop turn, ALL microtasks drain between turns — even ones queued by other microtasks. `queueMicrotask`/`then`/`await` share one FIFO queue (`process.nextTick` jumps ahead of all of them in Node). A timer scheduled from a microtask waits behind already-queued timers. `await` on an already-resolved value still yields — never synchronous.
+- **Classic bug:** microtask starvation — a loop that keeps re-queueing `then`s never reaches timers/I/O, so requests hang. Fix: break the chain with `setImmediate`/`setTimeout` to yield a macrotask turn.
+
 ### Exercises:
 - Open `01-event-loop.js`, predict each `console.log` first (where `// ?` is), then run `node 01-event-loop.js` and compare with your guess.
+- Open `02-micro-macro.js`, predict each `console.log` first (where `// ?` is), then run `node 02-micro-macro.js` and compare with your guess.
