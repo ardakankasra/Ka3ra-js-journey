@@ -87,8 +87,28 @@
 - **Rules:** `await` always yields (even on plain values — code after it never runs synchronously). Sequential `awaits` are serial, latencies add (2×50ms ≈ 123ms); `Promise.all` on independent I/Os costs the max (≈ 61ms) — verified in `04-async-await.js` §3. `await` in a loop is serial by construction. An unguarded rejection throws at that line and rejects the whole async function. Forgetting `await` hands you a promise, not the value.
 - **Classic bug:** `for (const id of ids) await db.query(...)` in a hot endpoint — works in dev, N+1 round trips in production. Fix: `await Promise.all(ids.map(...))`, with a concurrency cap when N is unbounded. In Express 4 an uncaught handler rejection hangs the request — always try/catch (or an async-error wrapper) plus `next(e)`.
 
+### Promise combinators:
+
+- **What it is:** one call running N promises concurrently, reduced to one promise — differing only in what "done" means: `all` (all fulfill, input order), `allSettled` (all settle, per-item report), `race` (first settle wins), `any` (first fulfillment wins).
+
+  ```javascript
+  await Promise.all([getUser(id), getOrders(id)]); // [user, orders] — max latency, not sum
+  ```
+
+- **What problem it solves:** fanning out independent I/Os without manual counters, plus the timeout pattern `all`/`await` can't express:
+
+  ```javascript
+  const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("db timeout")), 5000));
+  const rows = await Promise.race([db.query(sql), timeout]);
+  ```
+
+- **Where it is used:** `all` for parallel queries in one handler; `allSettled` for bulk imports where partial results are fine; `race` for timeouts on drivers without timeout support; `any` for fallbacks (primary → replica → recompute).
+- **Rules:** `all` resolves in input order when the slowest fulfills, rejects on the first rejection. `allSettled` always fulfills with `{status, value/reason}` items. `race` settles with the first settler, fulfill or reject. `any` fulfills with the first fulfillment, rejects with `AggregateError` (`.errors` holds all reasons) only if everything fails.
+- **Classic bug:** `all`'s fail-fast doesn't cancel the losers — other queries keep running (and billing) in the background. Fix: `AbortSignal` where supported, or `allSettled` when waste matters. `race` timeouts without `clearTimeout` in a `finally` leak a timer handle per request.
+
 ### Exercises:
 - Open `01-event-loop.js`, predict each `console.log` first (where `// ?` is), then run `node 01-event-loop.js` and compare with your guess.
 - Open `02-micro-macro.js`, predict each `console.log` first (where `// ?` is), then run `node 02-micro-macro.js` and compare with your guess.
 - Open `03-promise.js`, predict each `console.log` first (where `// ?` is), then run `node 03-promise.js` and compare with your guess.
 - Open `04-async-await.js`, predict each `console.log` first (where `// ?` is), then run `node 04-async-await.js` and compare with your guess.
+- Open `05-combinators.js`, predict each `console.log` first (where `// ?` is), then run `node 05-combinators.js` and compare with your guess.
