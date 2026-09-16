@@ -64,7 +64,31 @@
 - **Rules:** executor runs synchronously at construction; `then` callbacks are always async microtasks. Returning a value passes it down; returning a promise UNWRAPS it (flattening — costs one extra microtask tick, so it logs after same-level thens). Rejection/throw skips all `then`s until the first `catch`; `catch` recovers (chain continues fulfilled) unless it rethrows. `Promise.resolve(x)` assimilates if `x` is a promise.
 - **Classic bug:** a floating promise with no `catch` — the rejection is silent (or an `unhandledRejection` crash in new Node) far from where it was created. Fix: every chain ends in `catch`, or `await` it inside try/catch.
 
+### async/await:
+
+- **What it is:** the same promises underneath with sync-looking syntax — `await` pauses only its own function to a microtask; an `async` function always returns a promise.
+
+  ```javascript
+  async function f() { return 1; }
+  f() instanceof Promise; // true — even for a plain value
+  ```
+
+- **What problem it solves:** promise chains that still read inside-out once branching appears. Before — nested `then`s where each level re-handles errors; after — straight-line code with locals and normal control flow:
+
+  ```javascript
+  try {
+    const u = await getUser(id);
+    const o = await getOrders(u);
+    render(u, o);
+  } catch (e) { handleErr(e); }
+  ```
+
+- **Where it is used:** every Express handler, middleware, and seed script — any place that reads "get X, then get Y, then respond".
+- **Rules:** `await` always yields (even on plain values — code after it never runs synchronously). Sequential `awaits` are serial, latencies add (2×50ms ≈ 123ms); `Promise.all` on independent I/Os costs the max (≈ 61ms) — verified in `04-async-await.js` §3. `await` in a loop is serial by construction. An unguarded rejection throws at that line and rejects the whole async function. Forgetting `await` hands you a promise, not the value.
+- **Classic bug:** `for (const id of ids) await db.query(...)` in a hot endpoint — works in dev, N+1 round trips in production. Fix: `await Promise.all(ids.map(...))`, with a concurrency cap when N is unbounded. In Express 4 an uncaught handler rejection hangs the request — always try/catch (or an async-error wrapper) plus `next(e)`.
+
 ### Exercises:
 - Open `01-event-loop.js`, predict each `console.log` first (where `// ?` is), then run `node 01-event-loop.js` and compare with your guess.
 - Open `02-micro-macro.js`, predict each `console.log` first (where `// ?` is), then run `node 02-micro-macro.js` and compare with your guess.
 - Open `03-promise.js`, predict each `console.log` first (where `// ?` is), then run `node 03-promise.js` and compare with your guess.
+- Open `04-async-await.js`, predict each `console.log` first (where `// ?` is), then run `node 04-async-await.js` and compare with your guess.
