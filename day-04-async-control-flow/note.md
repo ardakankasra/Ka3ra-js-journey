@@ -1,4 +1,5 @@
 ### Day 04 — Async & Control Flow
+
 - **Event Loop** — the scheduler that runs async callbacks only when the call stack is empty, so one slow I/O never freezes the server.
 
 ### Event Loop:
