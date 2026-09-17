@@ -106,9 +106,30 @@
 - **Rules:** `all` resolves in input order when the slowest fulfills, rejects on the first rejection. `allSettled` always fulfills with `{status, value/reason}` items. `race` settles with the first settler, fulfill or reject. `any` fulfills with the first fulfillment, rejects with `AggregateError` (`.errors` holds all reasons) only if everything fails.
 - **Classic bug:** `all`'s fail-fast doesn't cancel the losers — other queries keep running (and billing) in the background. Fix: `AbortSignal` where supported, or `allSettled` when waste matters. `race` timeouts without `clearTimeout` in a `finally` leak a timer handle per request.
 
+### Error hierarchy:
+
+- **What it is:** custom `extends Error` classes — one per client-meaningful failure (`NotFound` → 404, `ValidationError` → 400) — so the handler maps type → status via `instanceof` instead of string-matching messages.
+
+  ```javascript
+  class NotFound extends AppError {
+    constructor(what) { super(`${what} not found`, 404); this.name = "NotFound"; }
+  }
+  catch (e) {
+    if (e instanceof NotFound) return res.status(404).json({ error: e.message });
+    logger.error(e);
+    return res.status(500).json({ error: "internal" });
+  }
+  ```
+
+- **What problem it solves:** the `if (message.includes(...))` swamp — fragile to rewording, and every new error edits the handler. With a hierarchy the error carries its own meaning; the mapper is closed to message edits. `cause` chaining keeps the debuggable root (`SyntaxError`/driver error) while the handler sees your class.
+- **Where it is used:** the Express error boundary — operational errors (4xx classes) get mapped responses, programmer bugs stay 500 with full stacks in the log.
+- **Rules:** always `extends Error` with `super(message)` first (captures the stack); set `this.name`. Operational data (`status`, `code`) goes on fields, never parsed from messages. Throwing raw strings/objects loses stack and `instanceof` — lint it out. The class survives `await` — rejection carries the instance across the async boundary intact.
+- **Classic bug:** `res.status(500).json({ error: e.message })` on unknowns leaks driver internals and paths to clients. Fix: log full server-side, send a static body. Second: a single `AppError` with ad-hoc statuses pushes status decisions to call sites — subclasses centralize them in the mapper.
+
 ### Exercises:
 - Open `01-event-loop.js`, predict each `console.log` first (where `// ?` is), then run `node 01-event-loop.js` and compare with your guess.
 - Open `02-micro-macro.js`, predict each `console.log` first (where `// ?` is), then run `node 02-micro-macro.js` and compare with your guess.
 - Open `03-promise.js`, predict each `console.log` first (where `// ?` is), then run `node 03-promise.js` and compare with your guess.
 - Open `04-async-await.js`, predict each `console.log` first (where `// ?` is), then run `node 04-async-await.js` and compare with your guess.
 - Open `05-combinators.js`, predict each `console.log` first (where `// ?` is), then run `node 05-combinators.js` and compare with your guess.
+- Open `06-error-hierarchy.js`, predict each `console.log` first (where `// ?` is), then run `node 06-error-hierarchy.js` and compare with your guess.
