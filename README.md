@@ -11,7 +11,7 @@
 | 01 | Values, Types, Coercion + Scope, Hoisting, TDZ, Closures | ✅ | |
 | 02 | `this`, Execution Context, call/apply/bind + Prototypes, Classes, Mixins | ✅ | |
 | 03 | Objects & Arrays deep-dive + Iterators & Generators | ✅ | |
-| 04 | Event Loop (Node phases) + Promises/async-await + Error Handling | 🟡 | ⚠️ heavy day |
+| 04 | Event Loop (Node phases) + Promises/async-await + Error Handling | ✅ | ⚠️ heavy day |
 | 05 | Modules (CJS vs ESM) + Meta-programming (Symbol/Proxy/Reflect) | ⬜ | |
 | 06 | Functional JS + Modern syntax (ES2025/26) + Memory model + Node internals | ⬜ | ⚠️ heavy day |
 | 07 | JS Security + Design Patterns + Testing + Capstone | ⬜ | ⚠️ heavy day |
