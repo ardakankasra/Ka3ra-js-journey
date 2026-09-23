@@ -101,8 +101,39 @@
 
 - **Classic bug:** putting state on a symbol key, then serializing — `JSON.stringify` silently drops it and the field vanishes in transit (API response, `localStorage`). Fix: mirror anything that must travel as a normal string key.
 
+### Proxy:
+
+- **What it is:** `new Proxy(target, handler)` — a wrapper object that intercepts fundamental operations (`get`, `set`, `has`, `deleteProperty`, `apply`, `construct`) through handler traps; a trap that's absent falls through to the default behavior.
+
+- **What problem it solves:** a plain object gives you no hook — you can't observe, validate, or block a property read/write without rewriting every access. Before/after:
+
+  ```javascript
+  user.age = "old";              // plain: always lands, no say
+
+  const guarded = new Proxy(user, {
+    set(t, p, v, r) {
+      if (p === "age" && typeof v !== "number") return false; // rejected
+      return Reflect.set(t, p, v, r);
+    },
+  });
+  guarded.age = "old";           // strict mode → TypeError, target untouched
+  ```
+
+- **Where it is used:** Vue 3's whole reactivity system (a Proxy per reactive object notices reads/writes), dev-mode argument validators, logging/audit wrappers, read-only "views" over mutable state, function decorators (the `apply` trap = `count every call`).
+
+- **Rules (priority order):**
+  1. **Wrap, never mutate** — the target stays as-is; `proxy !== target`, but transparent operations land on the target.
+  2. **One trap per operation** — `get(target, prop, receiver)`, `set(...)` → `false` blocks the write (`TypeError` in strict mode), `has` = `in`, `deleteProperty` = `delete`, `apply` = call, `construct` = `new`.
+  3. **Forward with `Reflect.*`** — `Reflect.get/set/apply` preserve `receiver` and `thisArg`; skipping them breaks inherited getters and prototype lookups.
+  4. **Traps must not violate invariants** — for frozen/non-configurable properties the engine forces the truth: a `get` trap returning a different value → `TypeError`.
+  5. **Only objects/functions** can be proxied, not primitives; a revoked proxy throws on any touch.
+  6. **Cost is per operation** — every read/write now crosses a function call; hot loops over proxied collections pay for it.
+
+- **Classic bug:** a `set` trap that stores on its own cache but never forwards (`cache[p] = v` with no `Reflect.set`) — the write silently never reaches the target, later reads show stale data. Fix: always end with `Reflect.set(target, p, v, receiver)`.
+
 ### Exercises:
 - Open `01-common.js`, predict each `console.log` first (where `// ?` is), then run `node 01-common.js` and compare with your guess.
 - Open `02-esm.mjs`, predict each `console.log` first (where `// ?` is), then run `node 02-esm.mjs` and compare with your guess.
 - Open `03-dynamic-import.mjs`, predict each `console.log` first (where `// ?` is), then run `node 03-dynamic-import.mjs` and compare with your guess.
 - Open `04-symbol.js`, predict each `console.log` first (where `// ?` is), then run `node 04-symbol.js` and compare with your guess.
+- Open `05-proxy.js`, predict each `console.log` first (where `// ?` is), then run `node 05-proxy.js` and compare with your guess.
