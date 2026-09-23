@@ -77,7 +77,32 @@
 
 - **Classic bug:** forgetting it's a Promise — `const m = import("./utils.js"); m.helper()` → `TypeError: m.helper is not a function` (m is a Promise). Fix: `const m = await import("./utils.js")` or `import(...).then(...)`.
 
+### Symbol:
+
+- **What it is:** a primitive type whose values are *always unique*, used mainly as object property keys that can never collide.
+
+- **What problem it solves:** string keys collide — two libraries both writing `.render` on the same object silently overwrite each other. Before/after:
+
+  ```javascript
+  row.id = 7;                     // string key: any lib can clobber it
+  const ID = Symbol("id");
+  row[ID] = 7;                    // symbol key: every Symbol("id") is a different slot
+  ```
+
+- **Where it is used:** the iterator protocol you met in Day 03 (`*[Symbol.iterator]`), engine hooks like `Symbol.toPrimitive`/`Symbol.toStringTag`, and framework internals marking state that must stay out of `JSON.stringify` and user code.
+
+- **Rules (priority order):**
+  1. **Always unique** — `Symbol("id") !== Symbol("id")`; `typeof` is `"symbol"`, not object.
+  2. **Symbol keys are hidden** from `Object.keys`, `for...in`, and `JSON.stringify`; revealed only by `Object.getOwnPropertySymbols` — but object spread and `Object.assign` DO copy them.
+  3. **No clobbering** — `obj.tag` (string) and `obj[Symbol("tag")]` are independent slots on the same object.
+  4. **`Symbol.for("x")` uses a global registry** — same string → same symbol across all code in the realm; plain `Symbol("x")` never shares.
+  5. **Well-known symbols are engine hooks** — `Symbol.iterator` (for...of protocol), `Symbol.toPrimitive` (controls `+`/template coercion), `Symbol.toStringTag`.
+  6. **Conversion** — `String(sym)` works (`"Symbol(id)"`); implicit conversion (`"x" + sym`) throws `TypeError`.
+
+- **Classic bug:** putting state on a symbol key, then serializing — `JSON.stringify` silently drops it and the field vanishes in transit (API response, `localStorage`). Fix: mirror anything that must travel as a normal string key.
+
 ### Exercises:
 - Open `01-common.js`, predict each `console.log` first (where `// ?` is), then run `node 01-common.js` and compare with your guess.
 - Open `02-esm.mjs`, predict each `console.log` first (where `// ?` is), then run `node 02-esm.mjs` and compare with your guess.
 - Open `03-dynamic-import.mjs`, predict each `console.log` first (where `// ?` is), then run `node 03-dynamic-import.mjs` and compare with your guess.
+- Open `04-symbol.js`, predict each `console.log` first (where `// ?` is), then run `node 04-symbol.js` and compare with your guess.
