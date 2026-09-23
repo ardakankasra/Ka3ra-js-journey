@@ -131,9 +131,36 @@
 
 - **Classic bug:** a `set` trap that stores on its own cache but never forwards (`cache[p] = v` with no `Reflect.set`) — the write silently never reaches the target, later reads show stale data. Fix: always end with `Reflect.set(target, p, v, receiver)`.
 
+### Reflect:
+
+- **What it is:** a built-in object of plain functions — one per fundamental language operation: `Reflect.get/set/has/deleteProperty/apply/construct/defineProperty/getPrototypeOf/ownKeys/...`. It's the callable form of what syntax already does (`obj.k`, `obj.k = v`, `in`, `delete`, `f()`, `new f`).
+
+- **What problem it solves:** syntax can't be parameterized — you can't hand a method's `this`, an argument list, or a `receiver` around as data. Before/after:
+
+  ```javascript
+  // Before: borrowing methods by ceremony
+  Function.prototype.apply.call(server.log, server, ["boot"]);
+
+  // After: the operation IS a function with explicit arguments
+  Reflect.apply(server.log, server, ["boot"]);
+  ```
+
+- **Where it is used:** every Proxy trap (its arguments are literally Reflect's — `set(target, prop, value, receiver)`), forwarding/copying property descriptors, delegating to a super-implementation with an explicit receiver, framework internals that reimplement `new`/call with custom `newTarget`.
+
+- **Rules (priority order):**
+  1. **One function per operation, same argument order as the Proxy trap** — that's the design: a trap body ends in `Reflect.*(target, ...)` and just forwards.
+  2. **`thisArg`/`receiver` are ordinary arguments** — `Reflect.apply(fn, thisArg, args)`, `Reflect.get(obj, prop, receiver)`; no more `fn.apply` gymnastics, no accidental loss of `this`.
+  3. **Boolean returns, no throwing on refusal** — `Reflect.set`/`deleteProperty`/`defineProperty` return `false` where assignment/`Object.*` would `TypeError`; the caller decides.
+  4. **`Reflect.ownKeys`** = all own keys (strings + symbols); `Object.keys` stays strings-only — Reflect deliberately has no legacy `Object` sugar (`Reflect.keys` does not exist).
+  5. **`Reflect.construct(C, args, newTarget)`** runs `C` with an arbitrary `new.target` — spawn instances wearing another class's prototype (`instanceof` follows `newTarget`).
+  6. **Read-only view of the language** — no setters of state, nothing to mutate; it's a toolbox, which is why it pairs with Proxy instead of replacing `Object`.
+
+- **Classic bug:** ignoring the boolean — `Reflect.set(frozen, "x", 2)` returns `false` and NOTHING tells you: the write is silently gone. Fix: check the result (`if (!Reflect.set(...)) handle()`) or use plain assignment when you *want* the `TypeError`.
+
 ### Exercises:
 - Open `01-common.js`, predict each `console.log` first (where `// ?` is), then run `node 01-common.js` and compare with your guess.
 - Open `02-esm.mjs`, predict each `console.log` first (where `// ?` is), then run `node 02-esm.mjs` and compare with your guess.
 - Open `03-dynamic-import.mjs`, predict each `console.log` first (where `// ?` is), then run `node 03-dynamic-import.mjs` and compare with your guess.
 - Open `04-symbol.js`, predict each `console.log` first (where `// ?` is), then run `node 04-symbol.js` and compare with your guess.
 - Open `05-proxy.js`, predict each `console.log` first (where `// ?` is), then run `node 05-proxy.js` and compare with your guess.
+- Open `06-reflect.js`, predict each `console.log` first (where `// ?` is), then run `node 06-reflect.js` and compare with your guess.
